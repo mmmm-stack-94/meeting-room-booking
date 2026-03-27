@@ -36,7 +36,7 @@
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center hidden">
         <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center gap-4">
             <div class="spinner !border-blue-200 !border-t-blue-600"></div>
-            <p class="text-slate-600 font-medium">資料同步中...</p>
+            <p id="loadingText" class="text-slate-600 font-medium">資料同步中...</p>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                 B棟1樓大會議室
             </h1>
             <p class="text-slate-500 mt-1 flex items-center gap-1">
-                <i data-lucide="database" class="w-4 h-4"></i> 已連線至 Google Sheets
+                <i data-lucide="database" class="w-4 h-4"></i> 資料同步模式 (Google Sheets)
             </p>
         </div>
         <button onclick="openAddModal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all active:scale-95">
@@ -186,7 +186,7 @@
     </div>
 
     <footer class="max-w-7xl mx-auto mt-8 text-center text-slate-400 text-[10px] uppercase tracking-widest">
-        &copy; 2024 Meeting Room Booking System - Google Sheets Sync Edition
+        &copy; 2026 Meeting Room Booking System
     </footer>
 
     <script>
@@ -216,7 +216,8 @@
             return `${y}-${m}-${d}`;
         }
 
-        function toggleLoading(show) {
+        function toggleLoading(show, text = "資料同步中...") {
+            document.getElementById('loadingText').innerText = text;
             document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
         }
 
@@ -229,17 +230,16 @@
 
         // --- API 溝通邏輯 ---
         async function syncData() {
-            toggleLoading(true);
+            toggleLoading(true, "正在從 Google Sheets 讀取資料...");
             try {
-                const response = await fetch(SCRIPT_URL);
+                const response = await fetch(SCRIPT_URL, { method: 'GET' });
                 const data = await response.json();
                 bookings = data.map(item => ({
                     ...item,
-                    id: String(item.id) // 確保 ID 是字串
+                    id: String(item.id)
                 }));
             } catch (error) {
                 console.error("同步失敗:", error);
-                // 如果連線失敗，從 LocalStorage 嘗試恢復或保持空
                 const local = localStorage.getItem('backup_bookings');
                 if (local) bookings = JSON.parse(local);
             } finally {
@@ -248,26 +248,25 @@
         }
 
         async function postToSheet(action, data) {
-            toggleLoading(true);
+            toggleLoading(true, "正在將變更儲存至 Google Sheets...");
             try {
-                // Google Apps Script 通常需要使用 GET 參數或 POST JSON
-                // 這裡採用標準 POST 方式
+                // Google Apps Script 的 fetch 限制，我們使用 text/plain 來規避某些 CORS 預檢問題
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action, data }),
+                    body: JSON.stringify({ action, data })
                 });
                 const result = await response.json();
                 if (result.status === "success") {
-                    // 更新本地資料狀態並存檔
                     localStorage.setItem('backup_bookings', JSON.stringify(bookings));
                     return true;
                 }
+                alert("儲存失敗: " + (result.message || "未知錯誤"));
                 return false;
             } catch (error) {
                 console.error("提交失敗:", error);
-                // 即使失敗，我們在前端還是先假裝成功（Optimistic UI），
-                // 但為了真實串接，應顯示提示
-                return true; 
+                // 即使失敗，本地端也會先更新，但提示使用者
+                alert("連線失敗，請檢查 Google Script 部署設定是否為「所有人」。");
+                return false;
             } finally {
                 toggleLoading(false);
             }
@@ -447,16 +446,17 @@
             }
 
             if (editingId) {
-                // 更新邏輯
                 const index = bookings.findIndex(b => b.id === editingId);
+                const oldBooking = bookings[index];
                 bookings[index] = { ...newBooking, id: editingId };
-                await postToSheet('update', { ...newBooking, id: editingId });
+                const success = await postToSheet('update', { ...newBooking, id: editingId });
+                if (!success) bookings[index] = oldBooking; // 失敗則回滾
             } else {
-                // 新增邏輯
                 const tempId = String(Date.now());
                 const bookingWithId = { ...newBooking, id: tempId };
                 bookings.push(bookingWithId);
-                await postToSheet('create', bookingWithId);
+                const success = await postToSheet('create', bookingWithId);
+                if (!success) bookings.pop(); // 失敗則移除
             }
 
             closeModal();
@@ -466,8 +466,10 @@
         async function handleDelete() {
             if (editingId) {
                 const targetId = editingId;
+                const backup = [...bookings];
                 bookings = bookings.filter(b => b.id !== targetId);
-                await postToSheet('delete', { id: targetId });
+                const success = await postToSheet('delete', { id: targetId });
+                if (!success) bookings = backup; // 失敗則回滾
                 closeModal();
                 renderCalendar();
             }
