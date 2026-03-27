@@ -289,16 +289,28 @@
       </div>
 
       <div class="modal-body">
-        <form id="bookingForm">
+        <div id="verifySection" style="display:none;">
+  <div class="field">
+    <input id="verifyPasswordOnly" type="password" maxlength="4" placeholder="請輸入原本設定的4碼密碼">
+  </div>
+  <div id="verifyError" class="error-box" style="display:none;">
+    密碼錯誤
+  </div>
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+    <button type="button" class="btn btn-primary" onclick="confirmPassword()">確認</button>
+  </div>
+</div>
+        <form id="bookingForm" style="display:none;">
           <div class="grid-2">
             <div class="field"><input id="name" placeholder="姓名" required></div>
             <div class="field"><input id="dept" placeholder="單位" required></div>
           </div>
 
-          <div class="grid-2">
-            <div class="field"><input id="phone" placeholder="聯絡電話" required></div>
-            <div class="field"><input id="password" placeholder="4碼密碼（編輯/修改）" maxlength="4" required></div>
-          </div>
+<div class="grid-2">
+  <div class="field"><input id="phone" placeholder="聯絡電話" required></div>
+  <div class="field"><input id="password" type="password" placeholder="四位密碼（編輯/修改）" maxlength="4" required></div>
+</div>
 
           <div class="field"><input id="date" type="date" required></div>
 
@@ -331,6 +343,7 @@
     let viewDate = new Date();
     let bookings = [];
     let editingId = null;
+    let pendingBooking = null;
 
     function getTodayStr() {
       const now = new Date();
@@ -504,47 +517,80 @@ async function postToSheet(payload) {
       renderCalendar();
     }
 
-    function resetForm() {
-      document.getElementById("bookingForm").reset();
-      document.getElementById("formError").style.display = "none";
-      document.getElementById("verifyPasswordField").style.display = "none";
-      document.getElementById("deleteBtn").style.display = "none";
-      document.getElementById("modalTitle").textContent = "新增預約";
-      document.getElementById("submitBtn").textContent = "送出";
-      editingId = null;
-    }
+  function resetForm() {
+  document.getElementById("bookingForm").reset();
+  document.getElementById("formError").style.display = "none";
+  document.getElementById("verifyError").style.display = "none";
+  document.getElementById("verifySection").style.display = "none";
+  document.getElementById("bookingForm").style.display = "none";
+  document.getElementById("deleteBtn").style.display = "none";
+  document.getElementById("modalTitle").textContent = "新增預約";
+  document.getElementById("submitBtn").textContent = "送出";
+  document.getElementById("verifyPassword").value = "";
+  document.getElementById("verifyPasswordOnly").value = "";
+  editingId = null;
+  pendingBooking = null;
+}
 
-    function openAddModal() {
-      resetForm();
-      document.getElementById("date").value = getTodayStr();
-      document.getElementById("startTime").value = "09:00";
-      document.getElementById("endTime").value = "10:00";
-      document.getElementById("modal").style.display = "flex";
-    }
+function openAddModal() {
+  resetForm();
+  document.getElementById("date").value = getTodayStr();
+  document.getElementById("startTime").value = "09:00";
+  document.getElementById("endTime").value = "10:00";
+  document.getElementById("bookingForm").style.display = "block";
+  document.getElementById("modalTitle").textContent = "新增預約";
+  document.getElementById("submitBtn").textContent = "送出";
+  document.getElementById("modal").style.display = "flex";
+}
 
-    function openEditModal(id) {
-      const booking = bookings.find(b => b.id === String(id));
-      if (!booking) return;
+function openEditModal(id) {
+  const booking = bookings.find(b => b.id === String(id));
+  if (!booking) return;
 
-      resetForm();
-      editingId = String(id);
+  resetForm();
+  editingId = String(id);
+  pendingBooking = booking;
 
-      document.getElementById("modalTitle").textContent = "修改 / 刪除預約";
-      document.getElementById("submitBtn").textContent = "儲存修改";
-      document.getElementById("deleteBtn").style.display = "inline-block";
-      document.getElementById("verifyPasswordField").style.display = "block";
+  document.getElementById("modalTitle").textContent = "請先驗證密碼";
+  document.getElementById("verifySection").style.display = "block";
+  document.getElementById("modal").style.display = "flex";
+}
+    
+function confirmPassword() {
+  if (!pendingBooking) return;
 
-      document.getElementById("name").value = booking.name;
-      document.getElementById("dept").value = booking.dept;
-      document.getElementById("phone").value = booking.phone;
-      document.getElementById("password").value = booking.password;
-      document.getElementById("date").value = booking.date;
-      document.getElementById("startTime").value = booking.startTime;
-      document.getElementById("endTime").value = booking.endTime;
-      document.getElementById("note").value = booking.note || "";
+  const inputPassword = document.getElementById("verifyPasswordOnly").value.trim();
 
-      document.getElementById("modal").style.display = "flex";
-    }
+  if (!inputPassword) {
+    document.getElementById("verifyError").textContent = "請輸入原本設定的4碼密碼";
+    document.getElementById("verifyError").style.display = "block";
+    return;
+  }
+
+  if (inputPassword !== String(pendingBooking.password)) {
+    document.getElementById("verifyError").textContent = "密碼錯誤";
+    document.getElementById("verifyError").style.display = "block";
+    return;
+  }
+
+  document.getElementById("verifyError").style.display = "none";
+  document.getElementById("verifySection").style.display = "none";
+  document.getElementById("bookingForm").style.display = "block";
+
+  document.getElementById("modalTitle").textContent = "修改 / 刪除預約";
+  document.getElementById("submitBtn").textContent = "儲存修改";
+  document.getElementById("deleteBtn").style.display = "inline-block";
+
+  document.getElementById("name").value = pendingBooking.name;
+  document.getElementById("dept").value = pendingBooking.dept;
+  document.getElementById("phone").value = pendingBooking.phone;
+  document.getElementById("password").value = "";
+  document.getElementById("date").value = pendingBooking.date;
+  document.getElementById("startTime").value = pendingBooking.startTime;
+  document.getElementById("endTime").value = pendingBooking.endTime;
+  document.getElementById("note").value = pendingBooking.note || "";
+  document.getElementById("verifyPassword").value = inputPassword;
+}
 
     function closeModal() {
       document.getElementById("modal").style.display = "none";
@@ -584,20 +630,20 @@ async function postToSheet(payload) {
       renderCalendar();
     }
 
-    async function handleFormSubmit(e) {
-      e.preventDefault();
-      document.getElementById("formError").style.display = "none";
+const newBooking = {
+  name: document.getElementById("name").value.trim(),
+  dept: document.getElementById("dept").value.trim(),
+  phone: document.getElementById("phone").value.trim(),
+  password: document.getElementById("password").value.trim(),
+  date: document.getElementById("date").value,
+  startTime: document.getElementById("startTime").value,
+  endTime: document.getElementById("endTime").value,
+  note: document.getElementById("note").value.trim()
+};
 
-      const newBooking = {
-        name: document.getElementById("name").value.trim(),
-        dept: document.getElementById("dept").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        password: document.getElementById("password").value.trim(),
-        date: document.getElementById("date").value,
-        startTime: document.getElementById("startTime").value,
-        endTime: document.getElementById("endTime").value,
-        note: document.getElementById("note").value.trim()
-      };
+if (editingId && !newBooking.password && pendingBooking) {
+  newBooking.password = String(pendingBooking.password || "");
+}
 
       if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
         showError("請填寫所有必填欄位");
