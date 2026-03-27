@@ -630,86 +630,94 @@ function confirmPassword() {
       renderCalendar();
     }
 
-const newBooking = {
-  name: document.getElementById("name").value.trim(),
-  dept: document.getElementById("dept").value.trim(),
-  phone: document.getElementById("phone").value.trim(),
-  password: document.getElementById("password").value.trim(),
-  date: document.getElementById("date").value,
-  startTime: document.getElementById("startTime").value,
-  endTime: document.getElementById("endTime").value,
-  note: document.getElementById("note").value.trim()
-};
+async function handleFormSubmit(e) {
+  e.preventDefault();
+  document.getElementById("formError").style.display = "none";
 
-if (editingId && !newBooking.password && pendingBooking) {
-  newBooking.password = String(pendingBooking.password || "");
+  const newBooking = {
+    name: document.getElementById("name").value.trim(),
+    dept: document.getElementById("dept").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    password: document.getElementById("password").value.trim(),
+    date: document.getElementById("date").value,
+    startTime: document.getElementById("startTime").value,
+    endTime: document.getElementById("endTime").value,
+    note: document.getElementById("note").value.trim()
+  };
+
+  if (editingId && !newBooking.password && pendingBooking) {
+    newBooking.password = String(pendingBooking.password || "");
+  }
+
+  if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
+    showError("請填寫所有必填欄位");
+    return;
+  }
+
+  if (newBooking.password.length !== 4) {
+    showError("請輸入四位數密碼");
+    return;
+  }
+
+  if (newBooking.startTime >= newBooking.endTime) {
+    showError("結束時間必須晚於開始時間");
+    return;
+  }
+
+  if (checkConflict(newBooking, editingId)) {
+    showError("此時段已有其他預約，請更換時間");
+    return;
+  }
+
+  let result;
+
+  if (editingId) {
+    const verifyPassword = document.getElementById("verifyPassword").value.trim();
+    if (!verifyPassword) {
+      showError("請輸入原本設定的4碼密碼");
+      return;
+    }
+
+    result = await postToSheet({
+      action: "update",
+      id: editingId,
+      "姓名": newBooking.name,
+      "單位": newBooking.dept,
+      "聯絡電話": newBooking.phone,
+      "設定密碼": newBooking.password,
+      "預約日期": newBooking.date,
+      "開始時間": newBooking.startTime,
+      "結束時間": newBooking.endTime,
+      "備註（選填）": newBooking.note,
+      "驗證密碼": verifyPassword
+    });
+
+  } else {
+
+    result = await postToSheet({
+      action: "create",
+      "姓名": newBooking.name,
+      "單位": newBooking.dept,
+      "聯絡電話": newBooking.phone,
+      "設定密碼": newBooking.password,
+      "預約日期": newBooking.date,
+      "開始時間": newBooking.startTime,
+      "結束時間": newBooking.endTime,
+      "備註（選填）": newBooking.note
+    });
+
+  }
+
+  if (!result.success) {
+    showError(result.message || "操作失敗");
+    return;
+  }
+
+  alert(editingId ? "修改成功" : "預約成功");
+  closeModal();
+  await syncData();
+  renderCalendar();
 }
-
-      if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
-        showError("請填寫所有必填欄位");
-        return;
-      }
-
-      if (newBooking.password.length !== 4) {
-        showError("請輸入四位數密碼");
-        return;
-      }
-
-      if (newBooking.startTime >= newBooking.endTime) {
-        showError("結束時間必須晚於開始時間");
-        return;
-      }
-
-      if (checkConflict(newBooking, editingId)) {
-        showError("此時段已有其他預約，請更換時間");
-        return;
-      }
-
-      let result;
-
-      if (editingId) {
-        const verifyPassword = document.getElementById("verifyPassword").value.trim();
-        if (!verifyPassword) {
-          showError("請輸入原本設定的4碼密碼");
-          return;
-        }
-
-        result = await postToSheet({
-          action: "update",
-          id: editingId,
-          "姓名": newBooking.name,
-          "單位": newBooking.dept,
-          "聯絡電話": newBooking.phone,
-          "設定密碼": newBooking.password,
-          "預約日期": newBooking.date,
-          "開始時間": newBooking.startTime,
-          "結束時間": newBooking.endTime,
-          "備註（選填）": newBooking.note,
-          "驗證密碼": verifyPassword
-        });
-      } else {
-        result = await postToSheet({
-          action: "create",
-          "姓名": newBooking.name,
-          "單位": newBooking.dept,
-          "聯絡電話": newBooking.phone,
-          "設定密碼": newBooking.password,
-          "預約日期": newBooking.date,
-          "開始時間": newBooking.startTime,
-          "結束時間": newBooking.endTime,
-          "備註（選填）": newBooking.note
-        });
-      }
-
-      if (!result.success) {
-        showError(result.message || "操作失敗");
-        return;
-      }
-
-      alert(editingId ? "修改成功" : "預約成功");
-      closeModal();
-      await syncData();
-      renderCalendar();
     }
 
     window.onload = async function () {
