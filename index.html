@@ -78,7 +78,9 @@
     }
 
     function toggleLoading(show) {
-        document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+    const el = document.getElementById('loadingOverlay');
+    if (el) {
+        el.classList.toggle('hidden', !show);
     }
 
     async function syncData() {
@@ -142,12 +144,20 @@
     }
 
     function renderSixMonths() {
-        const container = document.getElementById('calendarContainer');
-        container.innerHTML = '';
+    const container = document.getElementById('calendarContainer');
+    if (!container) {
+        console.error('找不到 #calendarContainer');
+        return;
+    }
 
-        const baseDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-        document.getElementById('monthDisplay').innerText =
-            `${baseDate.getFullYear()}年${baseDate.getMonth() + 1}月 起，未來 6 個月`;
+    container.innerHTML = '';
+
+    const monthDisplay = document.getElementById('monthDisplay');
+    const baseDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+
+    if (monthDisplay) {
+        monthDisplay.innerText = `${baseDate.getFullYear()}年${baseDate.getMonth() + 1}月 起，未來 6 個月`;
+    }
 
         for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
             const currentMonthDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, 1);
@@ -236,21 +246,42 @@
     }
 
     function openAddModal() {
-        editingId = null;
-        isVerified = true;
-        document.getElementById('bookingForm').reset();
-        document.getElementById('date').value = getTodayStr();
-        document.getElementById('startTime').value = "09:00";
-        document.getElementById('endTime').value = "10:00";
-        showView('form');
-        document.getElementById('modalTitle').querySelector('span').innerText = '新增會議預約';
-        document.getElementById('modalIcon').setAttribute('data-lucide', 'plus');
-        document.getElementById('modalIcon').classList.remove('text-green-500');
-        document.getElementById('modalIcon').classList.add('text-blue-600');
-        document.getElementById('deleteBtn').classList.add('hidden');
-        document.getElementById('modal').classList.remove('hidden');
-        document.getElementById('formError').classList.add('hidden');
-        lucide.createIcons();
+    editingId = null;
+    isVerified = true;
+
+    const form = document.getElementById('bookingForm');
+    if (form) form.reset();
+
+    const date = document.getElementById('date');
+    const startTime = document.getElementById('startTime');
+    const endTime = document.getElementById('endTime');
+    const modal = document.getElementById('modal');
+    const formError = document.getElementById('formError');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalIcon = document.getElementById('modalIcon');
+
+    if (date) date.value = getTodayStr();
+    if (startTime) startTime.value = "09:00";
+    if (endTime) endTime.value = "10:00";
+
+    showView('form');
+
+    if (modalTitle && modalTitle.querySelector('span')) {
+        modalTitle.querySelector('span').innerText = '新增會議預約';
+    }
+
+    if (modalIcon) {
+        modalIcon.setAttribute('data-lucide', 'plus');
+        modalIcon.classList.remove('text-green-500');
+        modalIcon.classList.add('text-blue-600');
+    }
+
+    if (deleteBtn) deleteBtn.classList.add('hidden');
+    if (modal) modal.classList.remove('hidden');
+    if (formError) formError.classList.add('hidden');
+
+    lucide.createIcons();
     }
 
     function openEditModal(id) {
@@ -282,14 +313,19 @@
     }
 
     function showView(view) {
-        if (view === 'verify') {
-            document.getElementById('verifyView').classList.remove('hidden');
-            document.getElementById('bookingForm').classList.add('hidden');
-        } else {
-            document.getElementById('verifyView').classList.add('hidden');
-            document.getElementById('bookingForm').classList.remove('hidden');
-        }
+    const verifyView = document.getElementById('verifyView');
+    const bookingForm = document.getElementById('bookingForm');
+
+    if (!verifyView || !bookingForm) return;
+
+    if (view === 'verify') {
+        verifyView.classList.remove('hidden');
+        bookingForm.classList.add('hidden');
+    } else {
+        verifyView.classList.add('hidden');
+        bookingForm.classList.remove('hidden');
     }
+}
 
     function closeModal() {
         document.getElementById('modal').classList.add('hidden');
@@ -375,9 +411,17 @@
     }
 
     function showError(msg) {
-        const formError = document.getElementById('formError');
-        document.getElementById('errorMsgText').innerText = msg;
+    const formError = document.getElementById('formError');
+    const errorMsgText = document.getElementById('errorMsgText');
+
+    if (errorMsgText) {
+        errorMsgText.innerText = msg;
+    }
+
+    if (formError) {
         formError.classList.remove('hidden');
+    } else {
+        alert(msg);
     }
 
     window.onload = async () => {
