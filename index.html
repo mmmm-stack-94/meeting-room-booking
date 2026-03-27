@@ -297,7 +297,7 @@
 
           <div class="grid-2">
             <div class="field"><input id="phone" placeholder="聯絡電話" required></div>
-            <div class="field"><input id="password" placeholder="4碼密碼" maxlength="4" required></div>
+            <div class="field"><input id="password" placeholder="4碼密碼（編輯/修改）" maxlength="4" required></div>
           </div>
 
           <div class="field"><input id="date" type="date" required></div>
@@ -326,7 +326,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "請換成你最新重新部署後的 Apps Script 網址";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybadQlvy-bfKGE4lvK_y4JKsfkA2qVe4ryDGAc62Nhziv5jJ1Evje4Tt4AzbylCOPo/exec";
 
     let viewDate = new Date();
     let bookings = [];
@@ -411,22 +411,41 @@
       }
     }
 
-    async function postToSheet(payload) {
-      toggleLoading(true);
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        return await res.json();
-      } catch (e) {
-        console.error("提交失敗:", e);
-        return { success: false, message: "送出失敗，請稍後再試" };
-      } finally {
-        toggleLoading(false);
-      }
+async function postToSheet(payload) {
+  toggleLoading(true);
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("Apps Script 回傳不是 JSON：", text);
+      return {
+        success: false,
+        message: "後端回傳格式錯誤，請確認 Apps Script 是否重新部署"
+      };
     }
+
+    return data;
+  } catch (e) {
+    console.error("提交失敗:", e);
+    return {
+      success: false,
+      message: "無法連線到 Apps Script，請檢查 SCRIPT_URL 或部署權限"
+    };
+  } finally {
+    toggleLoading(false);
+  }
+}
 
     function renderCalendar() {
       const calendarDays = document.getElementById("calendarDays");
