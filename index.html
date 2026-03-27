@@ -1,4 +1,139 @@
-<script>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>B棟1樓大會議室預約系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', 'Microsoft JhengHei', sans-serif; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .modal-bg { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-4 md:p-8">
+
+  <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+    <div class="bg-white px-6 py-4 rounded-2xl shadow-xl text-slate-700 font-medium">處理中...</div>
+  </div>
+
+  <header class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-2">
+        <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+        B棟1樓大會議室
+      </h1>
+      <p class="text-slate-500 mt-1 flex items-center gap-1">
+        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+        顯示未來 6 個月預約狀況
+      </p>
+    </div>
+    <button onclick="openAddModal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all active:scale-95">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      我要預約
+    </button>
+  </header>
+
+  <div class="max-w-7xl mx-auto mb-4 flex justify-between items-center bg-white p-4 rounded-t-2xl border-b shadow-sm">
+    <h2 id="monthDisplay" class="text-xl font-bold text-slate-700"></h2>
+    <div class="flex gap-2">
+      <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <button onclick="goToToday()" class="px-4 py-1 text-sm font-medium hover:bg-slate-100 rounded-lg border border-slate-200">今天</button>
+      <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <div id="calendarContainer" class="max-w-7xl mx-auto space-y-8"></div>
+
+  <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden shadow-slate-900/20">
+      <div class="flex justify-between items-center p-6 border-b">
+        <h3 id="modalTitle" class="text-xl font-bold flex items-center gap-2 text-slate-800">
+          <i id="modalIcon" data-lucide="plus" class="text-blue-600"></i>
+          <span>新增會議預約</span>
+        </h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <div id="verifyView" class="hidden p-6 space-y-4">
+        <div class="text-sm text-slate-600">請輸入預約時設定的 4 碼密碼</div>
+        <input id="verifyPasswordInput" type="password" maxlength="4" placeholder="請輸入4碼密碼"
+          class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm tracking-widest" />
+        <div id="passwordError" class="hidden p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">
+          密碼錯誤
+        </div>
+        <div class="flex gap-3">
+          <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50">取消</button>
+          <button type="button" onclick="confirmPassword()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">確認</button>
+        </div>
+      </div>
+
+      <form id="bookingForm" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase">姓名</label>
+            <input required id="name" type="text" placeholder="王小明" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase">單位</label>
+            <input required id="dept" type="text" placeholder="資通處XX科" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase">聯絡電話</label>
+            <input required id="phone" type="text" placeholder="0912345678" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-blue-600 uppercase">設定密碼 (4碼)</label>
+            <input required id="password" type="password" maxlength="4" placeholder="例如 1234" class="w-full px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl outline-none text-sm font-mono tracking-widest">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">預約日期</label>
+          <input required id="date" type="date" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase">開始時間</label>
+            <input required id="startTime" type="time" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500 uppercase">結束時間</label>
+            <input required id="endTime" type="time" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">備註 (選填)</label>
+          <textarea id="note" placeholder="會議目的或需求" rows="2" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm resize-none"></textarea>
+        </div>
+
+        <div id="formError" class="hidden p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">
+          <span id="errorMsgText"></span>
+        </div>
+
+        <div class="pt-4 flex gap-3">
+          <button type="button" id="deleteBtn" onclick="handleDelete()" class="hidden px-4 py-2 border border-red-200 text-red-600 rounded-xl font-medium hover:bg-red-50">刪除</button>
+          <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50">取消</button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-lg shadow-blue-200">送出</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybadQlvy-bfKGE4lvK_y4JKsfkA2qVe4ryDGAc62Nhziv5jJ1Evje4Tt4AzbylCOPo/exec";
 
     let viewDate = new Date();
@@ -7,426 +142,402 @@
     let isVerified = false;
 
     function getTodayStr() {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const d = String(now.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     function formatLocalDate(date) {
-        if (!date) return "";
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+      if (!date || isNaN(date)) return "";
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     function normalizeDateString(value) {
-        if (!value) return "";
-        if (typeof value === "string") {
-            const trimmed = value.trim();
+      if (!value) return "";
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
 
-            if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
-            if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(trimmed)) {
-                const parts = trimmed.split(" ")[0].split("/");
-                return `${parts[0]}-${String(parts[1]).padStart(2, "0")}-${String(parts[2]).padStart(2, "0")}`;
-            }
-
-            const parsed = new Date(trimmed);
-            if (!isNaN(parsed)) return formatLocalDate(parsed);
+        if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(trimmed)) {
+          const parts = trimmed.split(" ")[0].split("/");
+          return `${parts[0]}-${String(parts[1]).padStart(2, "0")}-${String(parts[2]).padStart(2, "0")}`;
         }
 
-        if (value instanceof Date && !isNaN(value)) {
-            return formatLocalDate(value);
-        }
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed)) return formatLocalDate(parsed);
+      }
 
-        return String(value).trim();
+      if (value instanceof Date && !isNaN(value)) {
+        return formatLocalDate(value);
+      }
+
+      return String(value).trim();
     }
 
     function normalizeTimeString(value) {
-        if (!value) return "";
-        if (typeof value === "string") {
-            const trimmed = value.trim();
+      if (!value) return "";
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
 
-            if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
-
-            if (/上午|下午/.test(trimmed)) {
-                const isPM = trimmed.includes("下午");
-                const match = trimmed.match(/(\d{1,2}):(\d{2})/);
-                if (match) {
-                    let hour = parseInt(match[1], 10);
-                    const minute = match[2];
-                    if (isPM && hour < 12) hour += 12;
-                    if (!isPM && hour === 12) hour = 0;
-                    return `${String(hour).padStart(2, "0")}:${minute}`;
-                }
-            }
-
-            const timeMatch = trimmed.match(/(\d{1,2}):(\d{2})/);
-            if (timeMatch) {
-                return `${String(timeMatch[1]).padStart(2, "0")}:${timeMatch[2]}`;
-            }
+        if (/上午|下午/.test(trimmed)) {
+          const isPM = trimmed.includes("下午");
+          const match = trimmed.match(/(\d{1,2}):(\d{2})/);
+          if (match) {
+            let hour = parseInt(match[1], 10);
+            const minute = match[2];
+            if (isPM && hour < 12) hour += 12;
+            if (!isPM && hour === 12) hour = 0;
+            return `${String(hour).padStart(2, "0")}:${minute}`;
+          }
         }
 
-        if (value instanceof Date && !isNaN(value)) {
-            return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+        const timeMatch = trimmed.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          return `${String(timeMatch[1]).padStart(2, "0")}:${timeMatch[2]}`;
         }
+      }
 
-        return String(value).trim();
+      if (value instanceof Date && !isNaN(value)) {
+        return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+      }
+
+      return String(value).trim();
     }
 
     function toggleLoading(show) {
-    const el = document.getElementById('loadingOverlay');
-    if (el) {
+      const el = document.getElementById('loadingOverlay');
+      if (el) {
         el.classList.toggle('hidden', !show);
+      }
     }
 
     async function syncData() {
-        toggleLoading(true);
-        try {
-            const response = await fetch(SCRIPT_URL);
-            const data = await response.json();
+      toggleLoading(true);
+      try {
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
 
-            if (!Array.isArray(data)) {
-                bookings = [];
-                return;
-            }
-
-            bookings = data.map(item => ({
-                id: String(item.id || ""),
-                name: item["姓名"] || item.name || "",
-                dept: item["單位"] || item.dept || "",
-                phone: item["聯絡電話"] || item.phone || "",
-                password: item["設定密碼"] || item.password || "",
-                date: normalizeDateString(item["預約日期"] || item.date),
-                startTime: normalizeTimeString(item["開始時間"] || item.startTime),
-                endTime: normalizeTimeString(item["結束時間"] || item.endTime),
-                note: item["備註（選填）"] || item.note || ""
-            }));
-        } catch (error) {
-            console.error("同步失敗:", error);
-            bookings = [];
-        } finally {
-            toggleLoading(false);
+        if (!Array.isArray(data)) {
+          bookings = [];
+          return;
         }
+
+        bookings = data.map(item => ({
+          id: String(item.id || ""),
+          name: item["姓名"] || "",
+          dept: item["單位"] || "",
+          phone: item["聯絡電話"] || "",
+          password: item["設定密碼"] || "",
+          date: normalizeDateString(item["預約日期"]),
+          startTime: normalizeTimeString(item["開始時間"]),
+          endTime: normalizeTimeString(item["結束時間"]),
+          note: item["備註（選填）"] || ""
+        }));
+      } catch (error) {
+        console.error("同步失敗:", error);
+        bookings = [];
+      } finally {
+        toggleLoading(false);
+      }
     }
 
     async function postCreateToSheet(booking) {
-        toggleLoading(true);
-        try {
-            const response = await fetch(SCRIPT_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify({
-                    "姓名": booking.name,
-                    "單位": booking.dept,
-                    "聯絡電話": booking.phone,
-                    "設定密碼": booking.password,
-                    "預約日期": booking.date,
-                    "開始時間": booking.startTime,
-                    "結束時間": booking.endTime,
-                    "備註（選填）": booking.note
-                })
-            });
+      toggleLoading(true);
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            "姓名": booking.name,
+            "單位": booking.dept,
+            "聯絡電話": booking.phone,
+            "設定密碼": booking.password,
+            "預約日期": booking.date,
+            "開始時間": booking.startTime,
+            "結束時間": booking.endTime,
+            "備註（選填）": booking.note
+          })
+        });
 
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            console.error("提交失敗:", error);
-            return { success: false, message: "送出失敗，請稍後再試" };
-        } finally {
-            toggleLoading(false);
-        }
+        return await response.json();
+      } catch (error) {
+        console.error("提交失敗:", error);
+        return { success: false, message: "送出失敗，請稍後再試" };
+      } finally {
+        toggleLoading(false);
+      }
     }
 
     function renderSixMonths() {
-    const container = document.getElementById('calendarContainer');
-    if (!container) {
-        console.error('找不到 #calendarContainer');
-        return;
-    }
+      const container = document.getElementById('calendarContainer');
+      if (!container) return;
 
-    container.innerHTML = '';
+      container.innerHTML = '';
 
-    const monthDisplay = document.getElementById('monthDisplay');
-    const baseDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+      const monthDisplay = document.getElementById('monthDisplay');
+      const baseDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
 
-    if (monthDisplay) {
+      if (monthDisplay) {
         monthDisplay.innerText = `${baseDate.getFullYear()}年${baseDate.getMonth() + 1}月 起，未來 6 個月`;
-    }
+      }
 
-        for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
-            const currentMonthDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, 1);
-            const year = currentMonthDate.getFullYear();
-            const month = currentMonthDate.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const todayStr = getTodayStr();
+      for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
+        const currentMonthDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, 1);
+        const year = currentMonthDate.getFullYear();
+        const month = currentMonthDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const totalDays = new Date(year, month + 1, 0).getDate();
+        const todayStr = getTodayStr();
 
-            const monthBlock = document.createElement('div');
-            monthBlock.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden';
+        const monthBlock = document.createElement('div');
+        monthBlock.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden';
 
-            const monthTitle = currentMonthDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+        const monthTitle = currentMonthDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
 
-            let daysHtml = '';
+        let daysHtml = '';
 
-            for (let i = 0; i < firstDay; i++) {
-                daysHtml += `<div class="border-r border-b border-slate-50 bg-slate-50/30 min-h-[140px]"></div>`;
-            }
-
-            for (let d = 1; d <= totalDays; d++) {
-                const dateObj = new Date(year, month, d);
-                const dateStr = formatLocalDate(dateObj);
-
-                const dayBookings = bookings
-                    .filter(b => b.date === dateStr)
-                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-                const isToday = dateStr === todayStr;
-                const todayClass = isToday ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600';
-
-                let bookingHtml = '';
-                dayBookings.forEach(b => {
-                    bookingHtml += `
-                        <div class="w-full text-left text-[10px] md:text-xs p-2 bg-white border border-slate-200 rounded-lg leading-tight relative overflow-hidden mb-1">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-                            <div class="font-bold text-blue-800">${b.startTime}–${b.endTime}</div>
-                            <div class="text-slate-700 font-medium truncate mt-0.5">${b.name}</div>
-                            <div class="text-slate-400 truncate">${b.dept}</div>
-                        </div>
-                    `;
-                });
-
-                daysHtml += `
-                    <div class="border-r border-b border-slate-100 p-2 hover:bg-slate-50/50 transition-colors min-h-[140px]">
-                        <div class="text-sm font-semibold mb-2 inline-flex items-center justify-center w-7 h-7 rounded-full ${todayClass}">
-                            ${d}
-                        </div>
-                        <div class="space-y-1.5">${bookingHtml}</div>
-                    </div>
-                `;
-            }
-
-            monthBlock.innerHTML = `
-                <div class="px-6 py-4 border-b bg-slate-50">
-                    <h2 class="text-xl font-bold text-slate-700">${monthTitle}</h2>
-                </div>
-                <div class="calendar-grid bg-slate-50 border-b">
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">日</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">一</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">二</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">三</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">四</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">五</div>
-                    <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">六</div>
-                </div>
-                <div class="calendar-grid auto-rows-[minmax(140px,auto)]">
-                    ${daysHtml}
-                </div>
-            `;
-
-            container.appendChild(monthBlock);
+        for (let i = 0; i < firstDay; i++) {
+          daysHtml += `<div class="border-r border-b border-slate-50 bg-slate-50/30 min-h-[140px]"></div>`;
         }
 
-        lucide.createIcons();
+        for (let d = 1; d <= totalDays; d++) {
+          const dateObj = new Date(year, month, d);
+          const dateStr = formatLocalDate(dateObj);
+
+          const dayBookings = bookings
+            .filter(b => b.date === dateStr)
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+          const isToday = dateStr === todayStr;
+          const todayClass = isToday ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600';
+
+          let bookingHtml = '';
+          dayBookings.forEach(b => {
+            bookingHtml += `
+              <div class="w-full text-left text-[10px] md:text-xs p-2 bg-white border border-slate-200 rounded-lg leading-tight relative overflow-hidden mb-1">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                <div class="font-bold text-blue-800">${b.startTime}–${b.endTime}</div>
+                <div class="text-slate-700 font-medium truncate mt-0.5">${b.name}</div>
+                <div class="text-slate-400 truncate">${b.dept}</div>
+              </div>
+            `;
+          });
+
+          daysHtml += `
+            <div class="border-r border-b border-slate-100 p-2 hover:bg-slate-50/50 transition-colors min-h-[140px]">
+              <div class="text-sm font-semibold mb-2 inline-flex items-center justify-center w-7 h-7 rounded-full ${todayClass}">
+                ${d}
+              </div>
+              <div class="space-y-1.5">${bookingHtml}</div>
+            </div>
+          `;
+        }
+
+        monthBlock.innerHTML = `
+          <div class="px-6 py-4 border-b bg-slate-50">
+            <h2 class="text-xl font-bold text-slate-700">${monthTitle}</h2>
+          </div>
+          <div class="calendar-grid bg-slate-50 border-b">
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">日</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">一</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">二</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">三</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">四</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">五</div>
+            <div class="py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">六</div>
+          </div>
+          <div class="calendar-grid auto-rows-[minmax(140px,auto)]">
+            ${daysHtml}
+          </div>
+        `;
+
+        container.appendChild(monthBlock);
+      }
+
+      lucide.createIcons();
     }
 
     function changeMonth(delta) {
-        viewDate.setMonth(viewDate.getMonth() + delta);
-        renderSixMonths();
+      viewDate.setMonth(viewDate.getMonth() + delta);
+      renderSixMonths();
     }
 
     function goToToday() {
-        viewDate = new Date();
-        renderSixMonths();
-    }
-
-    function openAddModal() {
-    editingId = null;
-    isVerified = true;
-
-    const form = document.getElementById('bookingForm');
-    if (form) form.reset();
-
-    const date = document.getElementById('date');
-    const startTime = document.getElementById('startTime');
-    const endTime = document.getElementById('endTime');
-    const modal = document.getElementById('modal');
-    const formError = document.getElementById('formError');
-    const deleteBtn = document.getElementById('deleteBtn');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalIcon = document.getElementById('modalIcon');
-
-    if (date) date.value = getTodayStr();
-    if (startTime) startTime.value = "09:00";
-    if (endTime) endTime.value = "10:00";
-
-    showView('form');
-
-    if (modalTitle && modalTitle.querySelector('span')) {
-        modalTitle.querySelector('span').innerText = '新增會議預約';
-    }
-
-    if (modalIcon) {
-        modalIcon.setAttribute('data-lucide', 'plus');
-        modalIcon.classList.remove('text-green-500');
-        modalIcon.classList.add('text-blue-600');
-    }
-
-    if (deleteBtn) deleteBtn.classList.add('hidden');
-    if (modal) modal.classList.remove('hidden');
-    if (formError) formError.classList.add('hidden');
-
-    lucide.createIcons();
-    }
-
-    function openEditModal(id) {
-        editingId = String(id);
-        const b = bookings.find(item => item.id === editingId);
-        if (!b) return;
-
-        isVerified = false;
-        document.getElementById('name').value = b.name;
-        document.getElementById('dept').value = b.dept;
-        document.getElementById('phone').value = b.phone;
-        document.getElementById('date').value = b.date;
-        document.getElementById('startTime').value = b.startTime;
-        document.getElementById('endTime').value = b.endTime;
-        document.getElementById('note').value = b.note || "";
-        document.getElementById('password').value = b.password;
-
-        document.getElementById('verifyPasswordInput').value = '';
-        showView('verify');
-        document.getElementById('modalTitle').querySelector('span').innerText = '身分驗證';
-        document.getElementById('modalIcon').setAttribute('data-lucide', 'lock');
-        document.getElementById('modalIcon').classList.remove('text-green-500');
-        document.getElementById('modalIcon').classList.add('text-blue-600');
-        document.getElementById('deleteBtn').classList.remove('hidden');
-        document.getElementById('modal').classList.remove('hidden');
-        document.getElementById('passwordError').classList.add('hidden');
-        document.getElementById('formError').classList.add('hidden');
-        lucide.createIcons();
+      viewDate = new Date();
+      renderSixMonths();
     }
 
     function showView(view) {
-    const verifyView = document.getElementById('verifyView');
-    const bookingForm = document.getElementById('bookingForm');
+      const verifyView = document.getElementById('verifyView');
+      const bookingForm = document.getElementById('bookingForm');
 
-    if (!verifyView || !bookingForm) return;
+      if (!verifyView || !bookingForm) return;
 
-    if (view === 'verify') {
+      if (view === 'verify') {
         verifyView.classList.remove('hidden');
         bookingForm.classList.add('hidden');
-    } else {
+      } else {
         verifyView.classList.add('hidden');
         bookingForm.classList.remove('hidden');
+      }
     }
-}
+
+    function openAddModal() {
+      editingId = null;
+      isVerified = true;
+
+      const form = document.getElementById('bookingForm');
+      if (form) form.reset();
+
+      const date = document.getElementById('date');
+      const startTime = document.getElementById('startTime');
+      const endTime = document.getElementById('endTime');
+      const modal = document.getElementById('modal');
+      const formError = document.getElementById('formError');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalIcon = document.getElementById('modalIcon');
+
+      if (date) date.value = getTodayStr();
+      if (startTime) startTime.value = "09:00";
+      if (endTime) endTime.value = "10:00";
+
+      showView('form');
+
+      if (modalTitle && modalTitle.querySelector('span')) {
+        modalTitle.querySelector('span').innerText = '新增會議預約';
+      }
+
+      if (modalIcon) {
+        modalIcon.setAttribute('data-lucide', 'plus');
+        modalIcon.classList.remove('text-green-500');
+        modalIcon.classList.add('text-blue-600');
+      }
+
+      if (deleteBtn) deleteBtn.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
+      if (formError) formError.classList.add('hidden');
+
+      lucide.createIcons();
+    }
 
     function closeModal() {
-        document.getElementById('modal').classList.add('hidden');
+      const modal = document.getElementById('modal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function confirmPassword() {
-        const input = document.getElementById('verifyPasswordInput').value;
-        const b = bookings.find(item => item.id === editingId);
-        if (b && String(input) === String(b.password)) {
-            isVerified = true;
-            showView('form');
-            document.getElementById('modalTitle').querySelector('span').innerText = '修改預約排程';
-            document.getElementById('modalIcon').setAttribute('data-lucide', 'shield-check');
-            document.getElementById('modalIcon').classList.remove('text-blue-600');
-            document.getElementById('modalIcon').classList.add('text-green-500');
-            lucide.createIcons();
-        } else {
-            document.getElementById('passwordError').classList.remove('hidden');
-        }
-    }
-
-    async function handleFormSubmit(e) {
-        e.preventDefault();
-
-        const newBooking = {
-            name: document.getElementById('name').value.trim(),
-            dept: document.getElementById('dept').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            date: document.getElementById('date').value,
-            startTime: document.getElementById('startTime').value,
-            endTime: document.getElementById('endTime').value,
-            note: document.getElementById('note').value.trim(),
-            password: document.getElementById('password').value.trim(),
-        };
-
-        if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.date || !newBooking.startTime || !newBooking.endTime || !newBooking.password) {
-            showError("請填寫所有必填欄位");
-            return;
-        }
-
-        if (newBooking.password.length !== 4) {
-            showError("請輸入四位數密碼");
-            return;
-        }
-
-        if (newBooking.startTime >= newBooking.endTime) {
-            showError("結束時間必須晚於開始時間");
-            return;
-        }
-
-        if (checkConflict(newBooking, editingId)) {
-            showError("此時段已有其他預約，請更換時間");
-            return;
-        }
-
-        if (editingId) {
-            showError("目前 Google Sheet 版先支援新增與查看；修改/刪除要再接後端 API。");
-            return;
-        }
-
-        const result = await postCreateToSheet(newBooking);
-
-        if (!result.success) {
-            showError(result.message || "預約失敗");
-            return;
-        }
-
-        closeModal();
-        await syncData();
-        renderSixMonths();
-    }
-
-    async function handleDelete() {
-        showError("目前 Google Sheet 版先支援新增與查看；刪除功能要再接後端 API。");
+      const input = document.getElementById('verifyPasswordInput')?.value || '';
+      const b = bookings.find(item => item.id === editingId);
+      if (b && String(input) === String(b.password)) {
+        isVerified = true;
+        showView('form');
+      } else {
+        const passwordError = document.getElementById('passwordError');
+        if (passwordError) passwordError.classList.remove('hidden');
+      }
     }
 
     function checkConflict(newB, excludeId) {
-        return bookings.some(b => {
-            if (excludeId && b.id === String(excludeId)) return false;
-            if (b.date !== newB.date) return false;
-            return (newB.startTime < b.endTime) && (newB.endTime > b.startTime);
-        });
+      return bookings.some(b => {
+        if (excludeId && b.id === String(excludeId)) return false;
+        if (b.date !== newB.date) return false;
+        return (newB.startTime < b.endTime) && (newB.endTime > b.startTime);
+      });
     }
 
     function showError(msg) {
-    const formError = document.getElementById('formError');
-    const errorMsgText = document.getElementById('errorMsgText');
+      const formError = document.getElementById('formError');
+      const errorMsgText = document.getElementById('errorMsgText');
 
-    if (errorMsgText) {
+      if (errorMsgText) {
         errorMsgText.innerText = msg;
+      }
+
+      if (formError) {
+        formError.classList.remove('hidden');
+      } else {
+        alert(msg);
+      }
     }
 
-    if (formError) {
-        formError.classList.remove('hidden');
-    } else {
-        alert(msg);
+    async function handleDelete() {
+      showError("目前版本先支援新增與查看；刪除功能尚未接後端 API。");
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const newBooking = {
+        name: document.getElementById('name')?.value.trim() || '',
+        dept: document.getElementById('dept')?.value.trim() || '',
+        phone: document.getElementById('phone')?.value.trim() || '',
+        date: document.getElementById('date')?.value || '',
+        startTime: document.getElementById('startTime')?.value || '',
+        endTime: document.getElementById('endTime')?.value || '',
+        note: document.getElementById('note')?.value.trim() || '',
+        password: document.getElementById('password')?.value.trim() || ''
+      };
+
+      const formError = document.getElementById('formError');
+      if (formError) formError.classList.add('hidden');
+
+      if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.date || !newBooking.startTime || !newBooking.endTime || !newBooking.password) {
+        showError("請填寫所有必填欄位");
+        return;
+      }
+
+      if (newBooking.password.length !== 4) {
+        showError("請輸入四位數密碼");
+        return;
+      }
+
+      if (newBooking.startTime >= newBooking.endTime) {
+        showError("結束時間必須晚於開始時間");
+        return;
+      }
+
+      if (checkConflict(newBooking, editingId)) {
+        showError("此時段已有其他預約，請更換時間");
+        return;
+      }
+
+      if (editingId) {
+        showError("目前版本先支援新增與查看；修改功能尚未接後端 API。");
+        return;
+      }
+
+      const result = await postCreateToSheet(newBooking);
+
+      if (!result.success) {
+        showError(result.message || "預約失敗");
+        return;
+      }
+
+      alert("預約成功");
+      closeModal();
+      await syncData();
+      renderSixMonths();
     }
 
     window.onload = async () => {
-        await syncData();
-        renderSixMonths();
-        lucide.createIcons();
+      const bookingForm = document.getElementById('bookingForm');
+      if (bookingForm) {
+        bookingForm.addEventListener('submit', handleFormSubmit);
+      }
+
+      await syncData();
+      renderSixMonths();
+      lucide.createIcons();
     };
-</script>
+  </script>
+</body>
+</html>
