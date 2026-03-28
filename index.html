@@ -808,15 +808,27 @@ function closeModal() {
         note: document.getElementById("note").value.trim()
       };
 
+      console.log("送出資料：", newBooking);
+      
       if (editingId && !newBooking.password && pendingBooking) {
         newBooking.password = String(pendingBooking.password || "");
       }
 
-      if (!newBooking.name || !newBooking.dept || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
-        showError("請填寫所有必填欄位");
-        return;
-      }
+const missingFields = [];
 
+if (!newBooking.name) missingFields.push("姓名");
+if (!newBooking.dept) missingFields.push("單位");
+if (!newBooking.password) missingFields.push("四位密碼");
+if (!newBooking.date) missingFields.push("預約日期");
+if (!newBooking.startTime) missingFields.push("開始時間");
+if (!newBooking.endTime) missingFields.push("結束時間");
+
+if (missingFields.length > 0) {
+  showError("請填寫或重新選擇：" + missingFields.join("、"));
+  console.log("缺少欄位：", missingFields);
+  console.log("目前送出資料：", newBooking);
+  return;
+}
 if (newBooking.password && newBooking.password.length !== 4) {
   showError("密碼必須為四位數");
   return;
