@@ -262,9 +262,9 @@
       }
 
       .day {
-        min-height: 90px;
-        padding: 6px;
-      }
+  min-height: 70px;
+  padding: 4px;
+}
 
       .booking {
         font-size: 11px;
@@ -284,6 +284,31 @@
         flex: 1;
       }
     }
+    .label-required::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: bold;
+}
+
+.detail-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.detail-value {
+  font-size: 16px;
+  color: #0f172a;
+  word-break: break-word;
+}
   </style>
 </head>
 <body>
@@ -330,51 +355,113 @@
         <button class="btn btn-secondary" onclick="closeModal()">關閉</button>
       </div>
 
-      <div class="modal-body">
-        <div id="verifySection" style="display:none;">
-          <div class="field">
-            <input id="verifyPasswordOnly" type="password" maxlength="4" placeholder="請輸入原本設定的4碼密碼">
-          </div>
-          <div id="verifyError" class="error-box">密碼錯誤</div>
-          <div class="actions">
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
-            <button type="button" class="btn btn-primary" onclick="confirmPassword()">確認</button>
-          </div>
-        </div>
+<div class="modal-body">
 
-        <form id="bookingForm" style="display:none;">
-          <div class="grid-2">
-            <div class="field"><input id="name" placeholder="姓名" required></div>
-            <div class="field"><input id="dept" placeholder="單位" required></div>
-          </div>
+  <div id="detailSection" style="display:none;">
+    <div class="detail-box">
+      <div class="detail-label">姓名</div>
+      <div class="detail-value" id="detailName"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">單位</div>
+      <div class="detail-value" id="detailDept"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">聯絡電話</div>
+      <div class="detail-value" id="detailPhone"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">預約日期</div>
+      <div class="detail-value" id="detailDate"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">開始時間</div>
+      <div class="detail-value" id="detailStartTime"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">結束時間</div>
+      <div class="detail-value" id="detailEndTime"></div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-label">備註</div>
+      <div class="detail-value" id="detailNote"></div>
+    </div>
 
-          <div class="grid-2">
-            <div class="field"><input id="phone" placeholder="聯絡電話" required></div>
-            <div class="field"><input id="password" type="password" placeholder="密碼（編輯/修改）" maxlength="4" required></div>
-          </div>
+    <div class="actions">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">關閉</button>
+      <button type="button" class="btn btn-primary" onclick="goToVerifyEdit()">修改</button>
+    </div>
+  </div>
 
-          <div class="field"><input id="date" type="date" required></div>
+  <div id="verifySection" style="display:none;">
+    <div class="field">
+      <input id="verifyPasswordOnly" type="password" maxlength="4" placeholder="請輸入原本設定的4碼密碼">
+    </div>
+    <div id="verifyError" class="error-box">密碼錯誤</div>
+    <div class="actions">
+      <button type="button" class="btn btn-secondary" onclick="backToDetail()">返回</button>
+      <button type="button" class="btn btn-primary" onclick="confirmPassword()">確認</button>
+    </div>
+  </div>
 
-          <div class="grid-2">
-            <div class="field"><input id="startTime" type="time" required></div>
-            <div class="field"><input id="endTime" type="time" required></div>
-          </div>
-
-          <div class="field"><textarea id="note" rows="3" placeholder="備註（選填）"></textarea></div>
-
-          <div class="field" id="verifyPasswordField" style="display:none;">
-            <input id="verifyPassword" placeholder="請輸入原本設定的4碼密碼">
-          </div>
-
-          <div id="formError" class="error-box"><span id="errorMsgText"></span></div>
-
-          <div class="actions">
-            <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;" onclick="handleDelete()">刪除</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
-            <button type="submit" class="btn btn-primary" id="submitBtn">送出</button>
-          </div>
-        </form>
+  <form id="bookingForm" style="display:none;">
+    <div class="grid-2">
+      <div class="field">
+        <label class="label-required">姓名</label>
+        <input id="name" placeholder="姓名" required>
       </div>
+      <div class="field">
+        <label class="label-required">單位</label>
+        <input id="dept" placeholder="單位" required>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>聯絡電話</label>
+        <input id="phone" placeholder="聯絡電話">
+      </div>
+      <div class="field">
+        <label class="label-required">四位密碼（編輯/修改）</label>
+        <input id="password" type="password" maxlength="4" placeholder="四位密碼（編輯/修改）">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label-required">預約日期</label>
+      <input id="date" type="date" required>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label class="label-required">開始時間</label>
+        <input id="startTime" type="time" required>
+      </div>
+      <div class="field">
+        <label class="label-required">結束時間</label>
+        <input id="endTime" type="time" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>備註（選填）</label>
+      <textarea id="note" rows="3" placeholder="備註（選填）"></textarea>
+    </div>
+
+    <div class="field" id="verifyPasswordField" style="display:none;">
+      <label class="label-required">驗證密碼</label>
+      <input id="verifyPassword" placeholder="請輸入原本設定的4碼密碼">
+    </div>
+
+    <div id="formError" class="error-box"><span id="errorMsgText"></span></div>
+
+    <div class="actions">
+      <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;" onclick="handleDelete()">刪除</button>
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn">送出</button>
+    </div>
+  </form>
+</div>
     </div>
   </div>
 
@@ -559,86 +646,116 @@
       renderCalendar();
     }
 
-    function resetForm() {
-      document.getElementById("bookingForm").reset();
-      document.getElementById("formError").style.display = "none";
-      document.getElementById("verifyError").style.display = "none";
-      document.getElementById("verifySection").style.display = "none";
-      document.getElementById("bookingForm").style.display = "none";
-      document.getElementById("verifyPasswordField").style.display = "none";
-      document.getElementById("deleteBtn").style.display = "none";
-      document.getElementById("modalTitle").textContent = "新增預約";
-      document.getElementById("submitBtn").textContent = "送出";
-      document.getElementById("verifyPassword").value = "";
-      document.getElementById("verifyPasswordOnly").value = "";
-      editingId = null;
-      pendingBooking = null;
-    }
+function resetForm() {
+  document.getElementById("bookingForm").reset();
+  document.getElementById("formError").style.display = "none";
+  document.getElementById("verifyError").style.display = "none";
 
-    function openAddModal() {
-      resetForm();
-      document.getElementById("date").value = getTodayStr();
-      document.getElementById("startTime").value = "09:00";
-      document.getElementById("endTime").value = "10:00";
-      document.getElementById("bookingForm").style.display = "block";
-      document.getElementById("modalTitle").textContent = "新增預約";
-      document.getElementById("submitBtn").textContent = "送出";
-      document.getElementById("modal").style.display = "flex";
-    }
+  document.getElementById("detailSection").style.display = "none";
+  document.getElementById("verifySection").style.display = "none";
+  document.getElementById("bookingForm").style.display = "none";
 
-    function openEditModal(id) {
-      const booking = bookings.find(b => b.id === String(id));
-      if (!booking) return;
+  document.getElementById("verifyPasswordField").style.display = "none";
+  document.getElementById("deleteBtn").style.display = "none";
 
-      resetForm();
-      editingId = String(id);
-      pendingBooking = booking;
+  document.getElementById("modalTitle").textContent = "新增預約";
+  document.getElementById("submitBtn").textContent = "送出";
 
-      document.getElementById("modalTitle").textContent = "請先驗證密碼";
-      document.getElementById("verifySection").style.display = "block";
-      document.getElementById("modal").style.display = "flex";
-    }
+  document.getElementById("verifyPassword").value = "";
+  document.getElementById("verifyPasswordOnly").value = "";
 
-    function confirmPassword() {
-      if (!pendingBooking) return;
+  editingId = null;
+  pendingBooking = null;
+}
 
-      const inputPassword = document.getElementById("verifyPasswordOnly").value.trim();
+function openAddModal() {
+  resetForm();
+  document.getElementById("date").value = getTodayStr();
+  document.getElementById("startTime").value = "09:00";
+  document.getElementById("endTime").value = "10:00";
+  document.getElementById("bookingForm").style.display = "block";
+  document.getElementById("modalTitle").textContent = "新增預約";
+  document.getElementById("submitBtn").textContent = "送出";
+  document.getElementById("modal").style.display = "flex";
+}
 
-      if (!inputPassword) {
-        document.getElementById("verifyError").textContent = "請輸入原本設定的4碼密碼";
-        document.getElementById("verifyError").style.display = "block";
-        return;
-      }
+function openEditModal(id) {
+  const booking = bookings.find(b => b.id === String(id));
+  if (!booking) return;
 
-      if (inputPassword !== String(pendingBooking.password)) {
-        document.getElementById("verifyError").textContent = "密碼錯誤";
-        document.getElementById("verifyError").style.display = "block";
-        return;
-      }
+  resetForm();
+  editingId = String(id);
+  pendingBooking = booking;
 
-      document.getElementById("verifyError").style.display = "none";
-      document.getElementById("verifySection").style.display = "none";
-      document.getElementById("bookingForm").style.display = "block";
+  document.getElementById("modalTitle").textContent = "預約詳情";
 
-      document.getElementById("modalTitle").textContent = "修改 / 刪除預約";
-      document.getElementById("submitBtn").textContent = "儲存修改";
-      document.getElementById("deleteBtn").style.display = "inline-block";
-      document.getElementById("verifyPasswordField").style.display = "block";
+  document.getElementById("detailName").textContent = booking.name || "";
+  document.getElementById("detailDept").textContent = booking.dept || "";
+  document.getElementById("detailPhone").textContent =
+  booking.phone && booking.phone.trim() !== "" ? booking.phone : "未填寫";
+  document.getElementById("detailDate").textContent = booking.date || "";
+  document.getElementById("detailStartTime").textContent = booking.startTime || "";
+  document.getElementById("detailEndTime").textContent = booking.endTime || "";
+  document.getElementById("detailNote").textContent = booking.note || "未填寫";
 
-      document.getElementById("name").value = pendingBooking.name;
-      document.getElementById("dept").value = pendingBooking.dept;
-      document.getElementById("phone").value = pendingBooking.phone;
-      document.getElementById("password").value = "";
-      document.getElementById("date").value = pendingBooking.date;
-      document.getElementById("startTime").value = pendingBooking.startTime;
-      document.getElementById("endTime").value = pendingBooking.endTime;
-      document.getElementById("note").value = pendingBooking.note || "";
-      document.getElementById("verifyPassword").value = inputPassword;
-    }
+  document.getElementById("detailSection").style.display = "block";
+  document.getElementById("modal").style.display = "flex";
+}
 
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-    }
+function confirmPassword() {
+  if (!pendingBooking) return;
+
+  const inputPassword = document.getElementById("verifyPasswordOnly").value.trim();
+
+  if (!inputPassword) {
+    document.getElementById("verifyError").textContent = "請輸入原本設定的4碼密碼";
+    document.getElementById("verifyError").style.display = "block";
+    return;
+  }
+
+  if (inputPassword !== String(pendingBooking.password)) {
+    document.getElementById("verifyError").textContent = "密碼錯誤";
+    document.getElementById("verifyError").style.display = "block";
+    return;
+  }
+
+  document.getElementById("verifyError").style.display = "none";
+  document.getElementById("verifySection").style.display = "none";
+  document.getElementById("bookingForm").style.display = "block";
+
+  document.getElementById("modalTitle").textContent = "修改 / 刪除預約";
+  document.getElementById("submitBtn").textContent = "儲存修改";
+  document.getElementById("deleteBtn").style.display = "inline-block";
+  document.getElementById("verifyPasswordField").style.display = "block";
+
+  document.getElementById("name").value = pendingBooking.name || "";
+  document.getElementById("dept").value = pendingBooking.dept || "";
+  document.getElementById("phone").value = pendingBooking.phone || "";
+  document.getElementById("password").value = "";
+  document.getElementById("date").value = pendingBooking.date || "";
+  document.getElementById("startTime").value = pendingBooking.startTime || "";
+  document.getElementById("endTime").value = pendingBooking.endTime || "";
+  document.getElementById("note").value = pendingBooking.note || "";
+  document.getElementById("verifyPassword").value = inputPassword;
+}
+    function goToVerifyEdit() {
+  document.getElementById("detailSection").style.display = "none";
+  document.getElementById("verifySection").style.display = "block";
+  document.getElementById("modalTitle").textContent = "請先驗證密碼";
+  document.getElementById("verifyError").style.display = "none";
+  document.getElementById("verifyPasswordOnly").value = "";
+}
+    
+    function backToDetail() {
+  document.getElementById("verifySection").style.display = "none";
+  document.getElementById("detailSection").style.display = "block";
+  document.getElementById("modalTitle").textContent = "預約詳情";
+}
+    
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+  resetForm();
+}
 
     function checkConflict(newB, excludeId = null) {
       return bookings.some(b => {
@@ -694,15 +811,15 @@
         newBooking.password = String(pendingBooking.password || "");
       }
 
-      if (!newBooking.name || !newBooking.dept || !newBooking.phone || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
+      if (!newBooking.name || !newBooking.dept || !newBooking.password || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
         showError("請填寫所有必填欄位");
         return;
       }
 
-      if (newBooking.password.length !== 4) {
-        showError("請輸入四位數密碼");
-        return;
-      }
+if (newBooking.password && newBooking.password.length !== 4) {
+  showError("密碼必須為四位數");
+  return;
+}
 
       if (newBooking.startTime >= newBooking.endTime) {
         showError("結束時間必須晚於開始時間");
