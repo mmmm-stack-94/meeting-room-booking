@@ -160,19 +160,23 @@
       inset: 0;
       background: rgba(15, 23, 42, 0.55);
       display: none;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 16px;
       z-index: 999;
+      overflow-y:auto;
     }
 
-    .modal {
-      width: 100%;
-      max-width: 560px;
-      background: white;
-      border-radius: 20px;
-      overflow: hidden;
-    }
+.modal {
+  width: 100%;
+  max-width: 560px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+
+  max-height: 90vh;
+  overflow-y: auto;
+}
 
     .modal-header {
       padding: 20px;
@@ -308,6 +312,15 @@
   font-size: 16px;
   color: #0f172a;
   word-break: break-word;
+}
+    @media (max-width: 768px) {
+  .modal {
+    border-radius: 14px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
 }
   </style>
 </head>
