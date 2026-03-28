@@ -537,17 +537,17 @@
           return;
         }
 
-        bookings = data.map(item => ({
-          id: String(item.id || ""),
-          name: item["姓名"] || "",
-          dept: item["單位"] || "",
-          phone: item["聯絡電話"] || "",
-          password: item["設定密碼"] || "",
-          date: normalizeDateString(item["預約日期"]),
-          startTime: normalizeTimeString(item["開始時間"]),
-          endTime: normalizeTimeString(item["結束時間"]),
-          note: item["備註（選填）"] || ""
-        }));
+bookings = data.map(item => ({
+  id: String(item.id || ""),
+  name: String(item["姓名"] || ""),
+  dept: String(item["單位"] || ""),
+  phone: String(item["聯絡電話"] || ""),
+  password: String(item["設定密碼"] || ""),
+  date: normalizeDateString(item["預約日期"]),
+  startTime: normalizeTimeString(item["開始時間"]),
+  endTime: normalizeTimeString(item["結束時間"]),
+  note: String(item["備註（選填）"] || "")
+}));
       } catch (e) {
         console.error("同步失敗:", e);
         bookings = [];
@@ -691,8 +691,10 @@ function openEditModal(id) {
 
   document.getElementById("detailName").textContent = booking.name || "";
   document.getElementById("detailDept").textContent = booking.dept || "";
-  document.getElementById("detailPhone").textContent =
-  booking.phone && booking.phone.trim() !== "" ? booking.phone : "未填寫";
+const phoneText = String(booking.phone || "").trim();
+const phoneText = String(booking.phone || "").trim();
+document.getElementById("detailPhone").textContent =
+  phoneText !== "" ? phoneText : "未填寫";
   document.getElementById("detailDate").textContent = booking.date || "";
   document.getElementById("detailStartTime").textContent = booking.startTime || "";
   document.getElementById("detailEndTime").textContent = booking.endTime || "";
